@@ -33,7 +33,7 @@ def get_latest_data():
     """Retrieve the latest URL and timestamp from Firestore."""
     try:
         doc_ref = db.collection(collection_name).document(document_name)
-        doc is doc_ref.get()
+        doc = doc_ref.get()
         if doc.exists:
             data = doc.to_dict()
             return data.get("url", ""), data.get("timestamp")
@@ -69,7 +69,7 @@ st.markdown(
     """
     <style>
     body {
-        background-image: url(dynamax-battle.png);
+        background-image: url('https://i.imgur.com/your_image.jpg');
         background-size: cover;
     }
     .title {
@@ -90,6 +90,21 @@ st.markdown(
         font-size: 24px;
         text-align: left;
         margin-top: 20px;
+    }
+    .button-container {
+        margin-top: 20px;
+        text-align: left;
+    }
+    .btn {
+        color: #FFFFFF;
+        background-color: #007BFF;
+        border: none;
+        padding: 10px 20px;
+        text-decoration: none;
+        border-radius: 5px;
+        box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
+        display: inline-block;
+        font-size: 18px;
     }
     </style>
     """,
