@@ -1,7 +1,6 @@
 import streamlit as st
 from google.cloud import firestore
 from google.oauth2 import service_account
-from urllib.parse import unquote_plus, parse_qs, urlencode
 import json
 
 # Load Firebase credentials from Streamlit secrets
@@ -38,22 +37,23 @@ def get_latest_url():
         print(f"Error retrieving URL from Firestore: {e}")
     return ""
 
+def restore_special_characters(url):
+    """Restore special characters in the URL."""
+    return url.replace('!!!', '?').replace('[[[', '&')
+
 # Check query parameters
 query_params = st.experimental_get_query_params()
-base_url = query_params.get("base", [None])[0]
-encoded_params = query_params.get("params", [None])[0]
+modified_link = query_params.get("link", [None])[0]
 
-if base_url and encoded_params:
-    # Decode parameters and reconstruct the full URL
-    decoded_params = parse_qs(unquote_plus(encoded_params))
-    query_string = urlencode(decoded_params, doseq=True)
-    full_url = f"{base_url}?{query_string}"
-    st.write(f"Reconstructed URL: {full_url}")
-    print(f"Reconstructed URL: {full_url}")
+if modified_link:
+    # Restore special characters and reconstruct the full URL
+    restored_link = restore_special_characters(modified_link)
+    st.write(f"Reconstructed URL: {restored_link}")
+    print(f"Reconstructed URL: {restored_link}")
 
     # Save the reconstructed link to Firestore
-    save_url_to_firestore(full_url)
-    st.success(f"Auto-submitted URL: {full_url}")
+    save_url_to_firestore(restored_link)
+    st.success(f"Auto-submitted URL: {restored_link}")
 
 # Display the latest URL for non-admin users
 st.title("Public Page")
