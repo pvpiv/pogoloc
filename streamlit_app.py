@@ -3,7 +3,6 @@ from google.cloud import firestore
 from google.oauth2 import service_account
 from urllib.parse import unquote_plus
 import json
-import re
 
 # Load Firebase credentials from Streamlit secrets
 key_dict = json.loads(st.secrets["textkey"])
@@ -32,14 +31,6 @@ def get_latest_url():
         return doc.to_dict().get("url", "")
     return ""
 
-def extract_url(text):
-    """Extract URL from a given text."""
-    url_pattern = re.compile(r'https?://\S+')
-    urls = url_pattern.findall(text)
-    for each in urls:
-        st.write(each)
-    return urls[0] if urls else ""
-
 # Check query parameters
 query_params = st.experimental_get_query_params()
 is_admin = query_params.get("admin", ["false"])[0].lower() == "true"
@@ -48,8 +39,14 @@ auto_link = query_params.get("link", [None])[0]
 if auto_link:
     # If the link parameter is provided, decode it and save it
     decoded_link = unquote_plus(auto_link)
-    save_url_to_firestore(decoded_link)
-    st.success(f"Auto-submitted URL: {decoded_link}")
+    st.write(f"Decoded URL: {decoded_link}")  # Display the decoded URL for debugging
+    try:
+        save_url_to_firestore(decoded_link)
+        st.success(f"Auto-submitted URL: {decoded_link}")
+        print(f"URL saved to Firestore: {decoded_link}")
+    except Exception as e:
+        st.error(f"Error saving URL: {e}")
+        print(f"Error saving URL to Firestore: {e}")
 
 if is_admin:
     st.title("Admin Interface")
