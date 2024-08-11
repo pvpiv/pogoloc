@@ -1,6 +1,8 @@
 import streamlit as st
 from google.cloud import firestore
 from google.oauth2 import service_account
+from datetime import datetime
+from urllib.parse import unquote_plus
 import json
 
 # Load Firebase credentials from Streamlit secrets
@@ -26,16 +28,17 @@ def save_url_to_firestore(url):
     except Exception as e:
         print(f"Error saving URL to Firestore: {e}")
 
-def get_latest_url():
-    """Retrieve the latest URL from Firestore."""
+def get_latest_data():
+    """Retrieve the latest URL and timestamp from Firestore."""
     try:
         doc_ref = db.collection(collection_name).document(document_name)
         doc = doc_ref.get()
         if doc.exists:
-            return doc.to_dict().get("url", "")
+            data = doc.to_dict()
+            return data.get("url", ""), data.get("timestamp")
     except Exception as e:
         print(f"Error retrieving URL from Firestore: {e}")
-    return ""
+    return "", None
 
 def restore_special_characters(url):
     """Restore special characters in the URL."""
@@ -55,12 +58,52 @@ if modified_link:
     save_url_to_firestore(restored_link)
     st.success(f"Auto-submitted URL: {restored_link}")
 
-# Display the latest URL for non-admin users
-st.title("Public Page")
+# Page title and background styling
+st.markdown(
+    """
+    <style>
+    body {
+        background-image: url('https://assets.pokemon.com//assets/cms2/img/misc/virtual-backgrounds/sword-shield/dynamax-battle.png');
+        background-size: cover;
+    }
+    .title {
+        color: #FFCB05;
+        font-size: 48px;
+        text-align: center;
+        text-shadow: 2px 2px #3B4CCA;
+    }
+    .timestamp {
+        color: #FFFFFF;
+        font-size: 18px;
+        text-align: center;
+        margin-top: 10px;
+        text-shadow: 1px 1px #3B4CCA;
+    }
+    .hyperlink {
+        color: #0074D9;
+        font-size: 24px;
+        text-align: center;
+        text-decoration: none;
+        background-color: rgba(255, 255, 255, 0.8);
+        border-radius: 10px;
+        padding: 10px;
+        box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.5);
+        display: inline-block;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
-# Display the last posted URL in a code box
-latest_url = get_latest_url()
+st.markdown('<div class="title">Team Rocket HQ Pokémon Go Raid Tracker</div>', unsafe_allow_html=True)
+
+# Display the latest URL and timestamp
+latest_url, timestamp = get_latest_data()
 if latest_url:
-    st.code(latest_url, language='text')
+    hyperlink_html = f'<a href="{latest_url}" target="_blank" class="hyperlink">Open Raid Link</a>'
+    st.markdown(hyperlink_html, unsafe_allow_html=True)
+    if timestamp:
+        last_updated = timestamp.to_pydatetime().strftime("%Y-%m-%d %H:%M:%S")
+        st.markdown(f'<div class="timestamp">Last Updated: {last_updated}</div>', unsafe_allow_html=True)
 else:
     st.info("No URL has been posted yet.")
