@@ -5,6 +5,7 @@ from datetime import datetime
 import pytz
 import json
 import re
+import time
 
 # Load Firebase credentials from Streamlit secrets
 key_dict = json.loads(st.secrets["textkey"])
@@ -81,25 +82,23 @@ st.markdown(
     .timestamp {
         color: #FFFFFF;
         font-size: 18px;
-        text-align: center;
+        text-align: left;
         margin-top: 10px;
         text-shadow: 1px 1px #3B4CCA;
     }
     .link-container {
         color: #FFFFFF;
         font-size: 24px;
-        text-align: center;
+        text-align: left;
         margin-top: 20px;
     }
-    .hyperlink {
-        color: #3B4CCA;
-        font-size: 18px;
-        text-decoration: none;
-        background-color: rgba(255, 255, 255, 0.8);
+    .embedded-link {
+        width: 100%;
+        height: 600px;
+        border: none;
         border-radius: 10px;
-        padding: 5px 10px;
         box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
-        display: inline-block;
+        margin-top: 20px;
     }
     </style>
     """,
@@ -125,6 +124,7 @@ if is_admin:
             if extracted_url:
                 save_url_to_firestore(extracted_url)
                 st.success("URL updated successfully!")
+                st.experimental_rerun()  # Refresh the page
             else:
                 st.error("No valid URL found in the text.")
         
@@ -139,7 +139,9 @@ else:
     latest_url, timestamp = get_latest_data()
     if latest_url:
         st.markdown('<div class="link-container">Click link below for Live Raid Tracker</div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="link-container"><a href="{latest_url}" target="_blank" class="hyperlink">{latest_url}</a></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="link-container"><a href="{latest_url}" target="_blank">{latest_url}</a></div>', unsafe_allow_html=True)
+        # Embed the link directly on the site
+        st.markdown(f'<iframe src="{latest_url}" class="embedded-link"></iframe>', unsafe_allow_html=True)
         if timestamp:
             # Convert timestamp to EST
             est = pytz.timezone('US/Eastern')
