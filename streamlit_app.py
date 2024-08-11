@@ -4,6 +4,7 @@ from google.oauth2 import service_account
 from datetime import datetime
 import pytz
 import json
+import re
 
 # Load Firebase credentials from Streamlit secrets
 key_dict = json.loads(st.secrets["textkey"])
@@ -40,23 +41,28 @@ def get_latest_data():
         print(f"Error retrieving URL from Firestore: {e}")
     return "", None
 
+def extract_url(text):
+    """Extract URL from a given text."""
+    url_pattern = re.compile(r'https?://\S+')
+    urls = url_pattern.findall(text)
+    for each in urls:
+        st.write(each)
+    return urls[0] if urls else ""
+
 def restore_special_characters(url):
     """Restore special characters in the URL."""
     return url.replace('!!!', '?').replace('[[[', '&')
 
 # Check query parameters
 query_params = st.experimental_get_query_params()
-modified_link = query_params.get("link", [None])[0]
+is_admin = query_params.get("admin", ["false"])[0].lower() == "true"
+auto_link = query_params.get("link", [None])[0]
 
-if modified_link:
-    # Restore special characters and reconstruct the full URL
-    restored_link = restore_special_characters(modified_link)
-    st.write(f"Reconstructed URL: {restored_link}")
-    print(f"Reconstructed URL: {restored_link}")
-
-    # Save the reconstructed link to Firestore
-    save_url_to_firestore(restored_link)
-    st.success(f"Auto-submitted URL: {restored_link}")
+if auto_link:
+    # If the link parameter is provided, decode it and save it
+    decoded_link = restore_special_characters(auto_link)
+    save_url_to_firestore(decoded_link)
+    st.success(f"Auto-submitted URL: {decoded_link}")
 
 # Page title and background styling
 st.markdown(
@@ -79,20 +85,21 @@ st.markdown(
         margin-top: 10px;
         text-shadow: 1px 1px #3B4CCA;
     }
-    .hyperlink {
-        color: #0074D9;
+    .link-container {
+        color: #FFFFFF;
         font-size: 24px;
         text-align: center;
+        margin-top: 20px;
+    }
+    .hyperlink {
+        color: #3B4CCA;
+        font-size: 18px;
         text-decoration: none;
         background-color: rgba(255, 255, 255, 0.8);
         border-radius: 10px;
-        padding: 10px;
-        box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.5);
+        padding: 5px 10px;
+        box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
         display: inline-block;
-    }
-    .link-container {
-        text-align: center;
-        margin-top: 20px;
     }
     </style>
     """,
@@ -101,15 +108,42 @@ st.markdown(
 
 st.markdown('<div class="title">Team Rocket HQ Pokémon Go Raid Tracker</div>', unsafe_allow_html=True)
 
-# Display the latest URL and timestamp
-latest_url, timestamp = get_latest_data()
-if latest_url:
-    st.markdown(f'<div class="link-container"><a href="{latest_url}" target="_blank" class="hyperlink">Live Raid Tracker</a></div>', unsafe_allow_html=True)
-    st.markdown(f'<div class="link-container"><a href="{latest_url}" target="_blank" class="hyperlink">{latest_url}</a></div>', unsafe_allow_html=True)
-    if timestamp:
-        # Convert timestamp to EST
-        est = pytz.timezone('US/Eastern')
-        last_updated = timestamp.astimezone(est).strftime("%Y-%m-%d %I:%M:%S %p %Z")
-        st.markdown(f'<div class="timestamp">Last Updated: {last_updated}</div>', unsafe_allow_html=True)
+if is_admin:
+    st.title("Admin Interface")
+    
+    # Container to control the layout
+    with st.container():
+        # Display the "Post URL" button above the text area
+        post_button = st.button("Post URL")
+        
+        # Input box to post a new URL
+        new_url = st.text_area("Paste the text containing the URL:")
+        
+        # Process after the button is clicked
+        if post_button:
+            extracted_url = extract_url(new_url)
+            if extracted_url:
+                save_url_to_firestore(extracted_url)
+                st.success("URL updated successfully!")
+            else:
+                st.error("No valid URL found in the text.")
+        
+        # Fetch and display the latest URL below the input box
+        latest_url, timestamp = get_latest_data()
+        if latest_url:
+            st.write("Latest URL:", latest_url)
+        else:
+            st.info("No URL has been posted yet.")
 else:
-    st.info("No URL has been posted yet.")
+    # Display the public page content
+    latest_url, timestamp = get_latest_data()
+    if latest_url:
+        st.markdown('<div class="link-container">Click link below for Live Raid Tracker</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="link-container"><a href="{latest_url}" target="_blank" class="hyperlink">{latest_url}</a></div>', unsafe_allow_html=True)
+        if timestamp:
+            # Convert timestamp to EST
+            est = pytz.timezone('US/Eastern')
+            last_updated = timestamp.astimezone(est).strftime("%Y-%m-%d %I:%M:%S %p %Z")
+            st.markdown(f'<div class="timestamp">Last Updated: {last_updated}</div>', unsafe_allow_html=True)
+    else:
+        st.info("No URL has been posted yet.")
