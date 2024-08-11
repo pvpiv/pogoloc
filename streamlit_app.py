@@ -18,13 +18,18 @@ db = firestore.Client(credentials=creds, project="pvpogo")
 collection_name = "location"
 document_name = "locs"
 
+import random
+
 def save_url_to_firestore(url):
     """Save the URL with a timestamp to Firestore."""
     try:
+        # Add a random increment to ensure a unique write
+        random_increment = random.randint(1, 1000)
         doc_ref = db.collection(collection_name).document(document_name)
         doc_ref.set({
             "url": url,
-            "timestamp": firestore.SERVER_TIMESTAMP
+            "timestamp": firestore.SERVER_TIMESTAMP,
+            "update_id": random_increment  # Ensure uniqueness
         })
         print(f"URL saved to Firestore: {url}")
     except Exception as e:
@@ -37,10 +42,17 @@ def get_latest_data():
         doc = doc_ref.get()
         if doc.exists:
             data = doc.to_dict()
-            return data.get("url", ""), data.get("timestamp")
+            # Ensure you get a fresh snapshot
+            timestamp = data.get("timestamp")
+            if timestamp:
+                timestamp = timestamp.to_datetime()
+                est = pytz.timezone('US/Eastern')
+                formatted_time = timestamp.astimezone(est).strftime("%Y-%m-%d %I:%M:%S %p %Z")
+                return data.get("url", ""), formatted_time
     except Exception as e:
         print(f"Error retrieving URL from Firestore: {e}")
-    return "", None
+    return "", ""
+
 
 def extract_url(text):
     """Extract URL from a given text."""
