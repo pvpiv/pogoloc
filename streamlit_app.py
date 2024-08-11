@@ -37,9 +37,15 @@ def extract_url(text):
     urls = url_pattern.findall(text)
     return urls[0] if urls else ""
 
-# Check if the admin query parameter is present
+# Check query parameters
 query_params = st.experimental_get_query_params()
 is_admin = query_params.get("admin", ["false"])[0].lower() == "true"
+auto_link = query_params.get("link", [None])[0]
+
+if auto_link:
+    # If the link parameter is provided, automatically save it
+    save_url_to_firestore(auto_link)
+    st.success(f"Auto-submitted URL: {auto_link}")
 
 if is_admin:
     st.title("Admin Interface")
