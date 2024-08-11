@@ -45,25 +45,23 @@ is_admin = query_params.get("admin", ["false"])[0].lower() == "true"
 if is_admin:
     st.title("Admin Interface")
     
-    # Display the "Post URL" button
-    st.write("Post the URL to update for all users:")
-    new_url = st.text_area("Paste the text containing the URL:")
-    
-    # Extract URL
-    extracted_url = extract_url(new_url)
-    
-    if st.button("Post URL"):
-        if extracted_url:
-            save_url_to_firestore(extracted_url)
-            st.success("URL updated successfully!")
-        else:
-            st.error("No valid URL found in the text.")
+    # Container to control the layout
+    with st.container():
+        # Display the "Post URL" button
+        post_button = st.button("Post URL")
+        
+        # Input box to post a new URL
+        new_url = st.text_area("Paste the text containing the URL:")
+        
+        # Process after the button is clicked
+        if post_button:
+            extracted_url = extract_url(new_url)
+            if extracted_url:
+                save_url_to_firestore(extracted_url)
+                st.success("URL updated successfully!")
+            else:
+                st.error("No valid URL found in the text.")
 else:
     st.title("Public Page")
     
-    # Display the last posted URL in a code box
-    latest_url = get_latest_url()
-    if latest_url:
-        st.code(latest_url, language='text')
-    else:
-        st.info("No URL has been posted yet.")
+    # Display the last
