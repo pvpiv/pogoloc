@@ -63,7 +63,7 @@ st.markdown(
     """
     <style>
     body {
-        background-image: url('https://assets.pokemon.com//assets/cms2/img/misc/virtual-backgrounds/sword-shield/dynamax-battle.png');
+        background-image: url('https://i.imgur.com/your_image.jpg');
         background-size: cover;
     }
     .title {
@@ -103,7 +103,10 @@ if latest_url:
     hyperlink_html = f'<a href="{latest_url}" target="_blank" class="hyperlink">Open Raid Link</a>'
     st.markdown(hyperlink_html, unsafe_allow_html=True)
     if timestamp:
-        last_updated = timestamp.to_pydatetime().strftime("%Y-%m-%d %H:%M:%S")
+        if isinstance(timestamp, datetime):
+            last_updated = timestamp.strftime("%Y-%m-%d %H:%M:%S")
+        else:
+            last_updated = datetime.fromtimestamp(timestamp.timestamp()).strftime("%Y-%m-%d %H:%M:%S")
         st.markdown(f'<div class="timestamp">Last Updated: {last_updated}</div>', unsafe_allow_html=True)
 else:
     st.info("No URL has been posted yet.")
