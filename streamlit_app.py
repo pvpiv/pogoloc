@@ -36,6 +36,8 @@ def extract_url(text):
     """Extract URL from a given text."""
     url_pattern = re.compile(r'https?://\S+')
     urls = url_pattern.findall(text)
+    for each in urls:
+        st.write(each)
     return urls[0] if urls else ""
 
 # Check query parameters
