@@ -44,16 +44,9 @@ is_admin = query_params.get("admin", ["false"])[0].lower() == "true"
 if is_admin:
     st.title("Admin Interface")
     
-    # Fetch and display the latest URL
-    latest_url = get_latest_url()
-    if latest_url:
-        st.write("Latest URL:", latest_url)
-    else:
-        st.info("No URL has been posted yet.")
-
     # Container to control the layout
     with st.container():
-        # Display the "Post URL" button
+        # Display the "Post URL" button above the text area
         post_button = st.button("Post URL")
         
         # Input box to post a new URL
@@ -65,12 +58,15 @@ if is_admin:
             if extracted_url:
                 save_url_to_firestore(extracted_url)
                 st.success("URL updated successfully!")
-                
-                # Refresh and display the updated URL
-                latest_url = get_latest_url()
-                st.write("Latest URL:", latest_url)
             else:
                 st.error("No valid URL found in the text.")
+        
+        # Fetch and display the latest URL below the input box
+        latest_url = get_latest_url()
+        if latest_url:
+            st.write("Latest URL:", latest_url)
+        else:
+            st.info("No URL has been posted yet.")
 else:
     st.title("Public Page")
     
