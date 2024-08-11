@@ -124,7 +124,7 @@ if is_admin:
             if extracted_url:
                 save_url_to_firestore(extracted_url)
                 st.success("URL updated successfully!")
-                st.experimental_rerun()  # Refresh the page
+                #st.experimental_rerun()  # Refresh the page
             else:
                 st.error("No valid URL found in the text.")
         
