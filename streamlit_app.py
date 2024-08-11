@@ -45,19 +45,19 @@ is_admin = query_params.get("admin", ["false"])[0].lower() == "true"
 if is_admin:
     st.title("Admin Interface")
     
-    # Input box to post a new URL
-    input_text = st.text_area("Paste the text containing the URL:")
+    # Display the "Post URL" button
+    st.write("Post the URL to update for all users:")
+    new_url = st.text_area("Paste the text containing the URL:")
     
     # Extract URL
-    extracted_url = extract_url(input_text)
+    extracted_url = extract_url(new_url)
     
-    if extracted_url:
-        st.write(f"Extracted URL: {extracted_url}")
-        if st.button("Post URL"):
+    if st.button("Post URL"):
+        if extracted_url:
             save_url_to_firestore(extracted_url)
             st.success("URL updated successfully!")
-    else:
-        st.info("No valid URL found in the text.")
+        else:
+            st.error("No valid URL found in the text.")
 else:
     st.title("Public Page")
     
