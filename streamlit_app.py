@@ -70,7 +70,7 @@ st.markdown(
     """
     <style>
     body {
-        background-image: url('https://i.imgur.com/your_image.jpg');
+        background-image: url('https://assets.pokemon.com//assets/cms2/img/misc/virtual-backgrounds/sword-shield/dynamax-battle.png');
         background-size: cover;
     }
     .title {
