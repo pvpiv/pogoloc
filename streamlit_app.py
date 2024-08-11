@@ -5,6 +5,7 @@ from datetime import datetime
 import pytz
 import json
 import re
+import time
 
 # Load Firebase credentials from Streamlit secrets
 key_dict = json.loads(st.secrets["textkey"])
@@ -69,7 +70,7 @@ st.markdown(
     """
     <style>
     body {
-        background-image: url('https://i.imgur.com/your_image.jpg');
+        background-image: url('dynamax-battle.png');
         background-size: cover;
     }
     .title {
@@ -91,20 +92,13 @@ st.markdown(
         text-align: left;
         margin-top: 20px;
     }
-    .button-container {
-        margin-top: 20px;
-        text-align: left;
-    }
-    .btn {
-        color: #FFFFFF;
-        background-color: #007BFF;
+    .embedded-link {
+        width: 100%;
+        height: 600px;
         border: none;
-        padding: 10px 20px;
-        text-decoration: none;
-        border-radius: 5px;
+        border-radius: 10px;
         box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
-        display: inline-block;
-        font-size: 18px;
+        margin-top: 20px;
     }
     </style>
     """,
@@ -144,8 +138,10 @@ else:
     # Display the public page content
     latest_url, timestamp = get_latest_data()
     if latest_url:
-        st.markdown('<div class="link-container">Click the button below for Live Raid Tracker</div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="button-container"><a href="{latest_url}" target="_blank" class="btn">Open Live Tracker</a></div>', unsafe_allow_html=True)
+        st.markdown('<div class="link-container">Click link below for Live Raid Tracker</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="link-container"><a href="{latest_url}" target="_blank">{latest_url}</a></div>', unsafe_allow_html=True)
+        # Embed the link directly on the site
+        st.markdown(f'<iframe src="{latest_url}" class="embedded-link"></iframe>', unsafe_allow_html=True)
         if timestamp:
             # Convert timestamp to EST
             est = pytz.timezone('US/Eastern')
