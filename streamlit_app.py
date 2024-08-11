@@ -1,6 +1,7 @@
 import streamlit as st
 from google.cloud import firestore
 from google.oauth2 import service_account
+from urllib.parse import unquote_plus
 import json
 import re
 
@@ -43,9 +44,10 @@ is_admin = query_params.get("admin", ["false"])[0].lower() == "true"
 auto_link = query_params.get("link", [None])[0]
 
 if auto_link:
-    # If the link parameter is provided, automatically save it
-    save_url_to_firestore(auto_link)
-    st.success(f"Auto-submitted URL: {auto_link}")
+    # If the link parameter is provided, decode it and save it
+    decoded_link = unquote_plus(auto_link)
+    save_url_to_firestore(decoded_link)
+    st.success(f"Auto-submitted URL: {decoded_link}")
 
 if is_admin:
     st.title("Admin Interface")
