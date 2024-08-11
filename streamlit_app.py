@@ -75,7 +75,7 @@ st.markdown(
     }
     .title {
         color: #FFCB05;
-        font-size: 24px;
+        font-size: 48px;
         text-align: center;
         text-shadow: 2px 2px #3B4CCA;
     }
