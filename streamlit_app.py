@@ -141,7 +141,7 @@ else:
         st.markdown('<div class="link-container">Click link below for Live Raid Tracker</div>', unsafe_allow_html=True)
         st.markdown(f'<div class="link-container"><a href="{latest_url}" target="_blank">{latest_url}</a></div>', unsafe_allow_html=True)
         # Embed the link directly on the site
-        st.markdown(f'<iframe src="{latest_url}" class="embedded-link"></iframe>', unsafe_allow_html=True)
+        #st.markdown(f'<iframe src="{latest_url}" class="embedded-link"></iframe>', unsafe_allow_html=True)
         if timestamp:
             # Convert timestamp to EST
             est = pytz.timezone('US/Eastern')
