@@ -1,7 +1,7 @@
 import streamlit as st
 from google.cloud import firestore
 from google.oauth2 import service_account
-from urllib.parse import unquote_plus
+from urllib.parse import unquote_plus, parse_qs, urlencode
 import json
 
 # Load Firebase credentials from Streamlit secrets
@@ -17,69 +17,50 @@ document_name = "locs"
 
 def save_url_to_firestore(url):
     """Save the URL with a timestamp to Firestore."""
-    doc_ref = db.collection(collection_name).document(document_name)
-    doc_ref.set({
-        "url": url,
-        "timestamp": firestore.SERVER_TIMESTAMP
-    })
+    try:
+        doc_ref = db.collection(collection_name).document(document_name)
+        doc_ref.set({
+            "url": url,
+            "timestamp": firestore.SERVER_TIMESTAMP
+        })
+        print(f"URL saved to Firestore: {url}")
+    except Exception as e:
+        print(f"Error saving URL to Firestore: {e}")
 
 def get_latest_url():
     """Retrieve the latest URL from Firestore."""
-    doc_ref = db.collection(collection_name).document(document_name)
-    doc = doc_ref.get()
-    if doc.exists:
-        return doc.to_dict().get("url", "")
+    try:
+        doc_ref = db.collection(collection_name).document(document_name)
+        doc = doc_ref.get()
+        if doc.exists:
+            return doc.to_dict().get("url", "")
+    except Exception as e:
+        print(f"Error retrieving URL from Firestore: {e}")
     return ""
 
 # Check query parameters
 query_params = st.experimental_get_query_params()
-is_admin = query_params.get("admin", ["false"])[0].lower() == "true"
-auto_link = query_params.get("link", [None])[0]
+base_url = query_params.get("base", [None])[0]
+encoded_params = query_params.get("params", [None])[0]
 
-if auto_link:
-    # If the link parameter is provided, decode it and save it
-    decoded_link = unquote_plus(auto_link)
-    st.write(f"Decoded URL: {decoded_link}")  # Display the decoded URL for debugging
-    try:
-        save_url_to_firestore(decoded_link)
-        st.success(f"Auto-submitted URL: {decoded_link}")
-        print(f"URL saved to Firestore: {decoded_link}")
-    except Exception as e:
-        st.error(f"Error saving URL: {e}")
-        print(f"Error saving URL to Firestore: {e}")
+if base_url and encoded_params:
+    # Decode parameters and reconstruct the full URL
+    decoded_params = parse_qs(unquote_plus(encoded_params))
+    query_string = urlencode(decoded_params, doseq=True)
+    full_url = f"{base_url}?{query_string}"
+    st.write(f"Reconstructed URL: {full_url}")
+    print(f"Reconstructed URL: {full_url}")
 
-if is_admin:
-    st.title("Admin Interface")
-    
-    # Container to control the layout
-    with st.container():
-        # Display the "Post URL" button above the text area
-        post_button = st.button("Post URL")
-        
-        # Input box to post a new URL
-        new_url = st.text_area("Paste the text containing the URL:")
-        
-        # Process after the button is clicked
-        if post_button:
-            extracted_url = extract_url(new_url)
-            if extracted_url:
-                save_url_to_firestore(extracted_url)
-                st.success("URL updated successfully!")
-            else:
-                st.error("No valid URL found in the text.")
-        
-        # Fetch and display the latest URL below the input box
-        latest_url = get_latest_url()
-        if latest_url:
-            st.write("Latest URL:", latest_url)
-        else:
-            st.info("No URL has been posted yet.")
+    # Save the reconstructed link to Firestore
+    save_url_to_firestore(full_url)
+    st.success(f"Auto-submitted URL: {full_url}")
+
+# Display the latest URL for non-admin users
+st.title("Public Page")
+
+# Display the last posted URL in a code box
+latest_url = get_latest_url()
+if latest_url:
+    st.code(latest_url, language='text')
 else:
-    st.title("Public Page")
-    
-    # Display the last posted URL in a code box
-    latest_url = get_latest_url()
-    if latest_url:
-        st.code(latest_url, language='text')
-    else:
-        st.info("No URL has been posted yet.")
+    st.info("No URL has been posted yet.")
