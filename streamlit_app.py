@@ -2,7 +2,7 @@ import streamlit as st
 from google.cloud import firestore
 from google.oauth2 import service_account
 from datetime import datetime
-from urllib.parse import unquote_plus
+import pytz
 import json
 
 # Load Firebase credentials from Streamlit secrets
@@ -90,6 +90,10 @@ st.markdown(
         box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.5);
         display: inline-block;
     }
+    .link-container {
+        text-align: center;
+        margin-top: 20px;
+    }
     </style>
     """,
     unsafe_allow_html=True
@@ -100,13 +104,12 @@ st.markdown('<div class="title">Team Rocket HQ Pokémon Go Raid Tracker</div>', 
 # Display the latest URL and timestamp
 latest_url, timestamp = get_latest_data()
 if latest_url:
-    hyperlink_html = f'<a href="{latest_url}" target="_blank" class="hyperlink">Open Raid Link</a>'
-    st.markdown(hyperlink_html, unsafe_allow_html=True)
+    st.markdown(f'<div class="link-container"><a href="{latest_url}" target="_blank" class="hyperlink">Live Raid Tracker</a></div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="link-container"><a href="{latest_url}" target="_blank" class="hyperlink">{latest_url}</a></div>', unsafe_allow_html=True)
     if timestamp:
-        if isinstance(timestamp, datetime):
-            last_updated = timestamp.strftime("%Y-%m-%d %H:%M:%S")
-        else:
-            last_updated = datetime.fromtimestamp(timestamp.timestamp()).strftime("%Y-%m-%d %H:%M:%S")
+        # Convert timestamp to EST
+        est = pytz.timezone('US/Eastern')
+        last_updated = timestamp.astimezone(est).strftime("%Y-%m-%d %I:%M:%S %p %Z")
         st.markdown(f'<div class="timestamp">Last Updated: {last_updated}</div>', unsafe_allow_html=True)
 else:
     st.info("No URL has been posted yet.")
