@@ -7,6 +7,7 @@ import json
 import re
 import requests
 from urllib.parse import urlparse, parse_qs
+import streamlit.components.v1 as components
 
 def resolve_short_url(short_url):
     # Resolve the short URL to the full Google Maps URL
