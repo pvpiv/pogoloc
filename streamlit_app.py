@@ -5,52 +5,48 @@ import pytz
 import json
 import re
 
-# Load Firebase credentials from Streamlit secrets
+# Load Firebase credentials and create Firestore client
 key_dict = json.loads(st.secrets["textkey"])
 creds = service_account.Credentials.from_service_account_info(key_dict)
-
-# Firestore client
 db = firestore.Client(credentials=creds, project="pvpogo")
 
-# Collection and document references
+# Firestore collection name
 collection_name = "location"
-document_name = "locs"
 
 def save_url_to_firestore(url):
     """Save the URL with a timestamp to Firestore."""
     try:
-        doc_ref = db.collection(collection_name).document(document_name)
-        doc_ref.set({
-            "url": url,
-            "timestamp": firestore.SERVER_TIMESTAMP
+        docs = db.collection(collection_name).stream()
+        max_id = max((int(doc.id) for doc in docs), default=0)
+        new_id = str(max_id + 1)
+        db.collection(collection_name).document(new_id).set({
+            'URL': url,
+            'Timestamp': firestore.SERVER_TIMESTAMP
         })
-        st.success(f"URL saved to Firestore: {url}")
-        print(f"URL saved to Firestore: {url}")  # Debug print
+        st.success(f"URL saved to Firestore with ID {new_id}: {url}")
     except Exception as e:
         st.error(f"Error saving URL to Firestore: {e}")
-        print(f"Error saving URL to Firestore: {e}")  # Debug print
 
-def get_latest_data():
-    """Retrieve the latest URL and timestamp from Firestore."""
+def get_latest_url():
+    """Retrieve the latest URL from Firestore based on the highest document ID."""
     try:
-        doc_ref = db.collection(collection_name).document(document_name)
-        doc = doc_ref.get()
-        if doc.exists:
-            data = doc.to_dict()
-            print(f"Retrieved data from Firestore: {data}")  # Debug print
-            return data.get("url", ""), data.get("timestamp")
-        else:
-            print("Document does not exist.")  # Debug print
+        docs = db.collection(collection_name).stream()
+        max_doc = None
+        max_id = 0
+        for doc in docs:
+            doc_id = int(doc.id)  # Assuming document IDs are stored as numeric strings
+            if doc_id > max_id:
+                max_id = doc_id
+                max_doc = doc
+        if max_doc:
+            data = max_doc.to_dict()
+            timestamp = data['Timestamp']
+            est = pytz.timezone('US/Eastern')
+            formatted_time = timestamp.astimezone(est).strftime("%Y-%m-%d %I:%M:%S %p %Z")
+            return data['URL'], formatted_time
     except Exception as e:
         st.error(f"Error retrieving URL from Firestore: {e}")
-        print(f"Error retrieving URL from Firestore: {e}")  # Debug print
-    return "", None
-
-def extract_url(text):
-    """Extract URL from a given text."""
-    url_pattern = re.compile(r'https?://\S+')
-    urls = url_pattern.findall(text)
-    return urls[0] if urls else ""
+    return None, None
 
 def restore_special_characters(url):
     """Restore special characters in the URL."""
@@ -61,12 +57,11 @@ query_params = st.experimental_get_query_params()
 is_admin = query_params.get("admin", ["false"])[0].lower() == "true"
 auto_link = query_params.get("link", [None])[0]
 
-if auto_link and is_admin:
-    # If the link parameter is provided and user is admin, decode it and save it
+if auto_link:
+    # If the link parameter is provided, decode it and save it
     decoded_link = restore_special_characters(auto_link)
     save_url_to_firestore(decoded_link)
     st.success(f"Auto-submitted URL: {decoded_link}")
-    print(f"Auto-submitted URL: {decoded_link}")  # Debug print
 
 # Page title and background styling
 st.markdown(
@@ -78,9 +73,10 @@ st.markdown(
     }
     .title {
         color: #FFCB05;
-        font-size: 24px;
+        font-size: 48px;
         text-align: center;
         text-shadow: 2px 2px #3B4CCA;
+        margin-bottom: 20px;
     }
     .timestamp {
         color: #FFFFFF;
@@ -92,16 +88,24 @@ st.markdown(
     .link-container {
         color: #FFFFFF;
         font-size: 24px;
-        text-align: left;
+        text-align: center;
         margin-top: 20px;
+        margin-bottom: 20px;
     }
-    .embedded-link {
-        width: 100%;
-        height: 600px;
-        border: none;
-        border-radius: 10px;
-        box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
-        margin-top: 20px;
+    .link-button {
+        display: inline-block;
+        background-color: #FFCB05; /* Yellow color */
+        color: #3B4CCA; /* Dark blue text */
+        padding: 10px 20px;
+        font-size: 24px;
+        border-radius: 5px;
+        text-decoration: none;
+        box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+        transition: background-color 0.3s, color 0.3s;
+    }
+    .link-button:hover {
+        background-color: #FFD700; /* Lighter yellow */
+        color: #2B3CA0; /* Slightly darker blue */
     }
     </style>
     """,
@@ -110,42 +114,24 @@ st.markdown(
 
 st.markdown('<div class="title">Team Rocket HQ Pokémon Go Raid Tracker</div>', unsafe_allow_html=True)
 
+# Admin Interface
 if is_admin:
-    st.title("Admin Interface")
-    
-    # Container to control the layout
-    with st.container():
-        # Display the "Post URL" button above the text area
-        post_button = st.button("Post URL")
-        
-        # Input box to post a new URL
-        new_url = st.text_area("Paste the text containing the URL:")
-        
-        # Process after the button is clicked
-        if post_button:
-            extracted_url = extract_url(new_url)
-            if extracted_url:
-                save_url_to_firestore(extracted_url)
-                st.success("URL updated successfully!")
-            else:
-                st.error("No valid URL found in the text.")
-        
-        # Fetch and display the latest URL below the input box
-        latest_url, timestamp = get_latest_data()
-        if latest_url:
-            st.write("Latest URL:", latest_url)
+    st.sidebar.title("Admin Interface")
+    new_url = st.sidebar.text_area("Paste the URL:")
+    if st.sidebar.button("Post URL"):
+        if new_url:
+            save_url_to_firestore(new_url)
         else:
-            st.info("No URL has been posted yet.")
+            st.sidebar.error("No URL entered.")
+
+# Display the latest URL
+url, last_updated = get_latest_url()
+if url:
+    st.markdown(f"""
+        <div class="link-container">
+            <a href="{url}" target="_blank" class="link-button">Click Here to See Live Map</a>
+        </div>
+        <div class="timestamp">Last Updated: {last_updated}</div>
+    """, unsafe_allow_html=True)
 else:
-    # Display the public page content
-    latest_url, timestamp = get_latest_data()
-    if latest_url:
-        st.markdown('<div class="link-container">Click link below for Live Raid Tracker</div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="link-container"><a href="{latest_url}" target="_blank">{latest_url}</a></div>', unsafe_allow_html=True)
-        if timestamp:
-            # Convert timestamp to EST
-            est = pytz.timezone('US/Eastern')
-            last_updated = timestamp.astimezone(est).strftime("%Y-%m-%d %I:%M:%S %p %Z")
-            st.markdown(f'<div class="timestamp">Last Updated: {last_updated}</div>', unsafe_allow_html=True)
-    else:
-        st.info("No URL has been posted yet.")
+    st.info("No URLs found.")
