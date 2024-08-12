@@ -3,3 +3,4 @@ streamlit_analytics
 firebase_admin
 google.cloud
 selenium 
+webdriver_manager
