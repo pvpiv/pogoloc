@@ -1,11 +1,9 @@
-import streamlit as st
 from google.cloud import firestore
-from google.oauth2 import service_account
+import streamlit as st
 from datetime import datetime
 import pytz
 import json
 import re
-import time
 
 # Load Firebase credentials and create Firestore client
 key_dict = json.loads(st.secrets["textkey"])
@@ -13,12 +11,14 @@ creds = service_account.Credentials.from_service_account_info(key_dict)
 db = firestore.Client(credentials=creds, project="pvpogo")
 
 # References
-collection_name = "locations"
+collection_name = "location"
+document_name = "locs"
 
 def save_url_to_firestore(url):
-    """Save the URL with a timestamp to Firestore in a new document."""
+    """Save the URL with a timestamp to Firestore in a new subdocument."""
     try:
-        doc_ref = db.collection(collection_name).document()
+        # Generate a new subdocument under the specified document
+        doc_ref = db.collection(collection_name).document(document_name).collection("urls").document()
         doc_ref.set({
             "url": url,
             "timestamp": firestore.SERVER_TIMESTAMP  # Firestore server timestamp
@@ -30,7 +30,7 @@ def save_url_to_firestore(url):
 def get_latest_url():
     """Retrieve the latest URL from Firestore sorted by timestamp."""
     try:
-        query = db.collection(collection_name).order_by("timestamp", direction=firestore.Query.DESCENDING).limit(1)
+        query = db.collection(collection_name).document(document_name).collection("urls").order_by("timestamp", direction=firestore.Query.DESCENDING).limit(1)
         docs = query.stream()
         for doc in docs:
             data = doc.to_dict()
@@ -42,23 +42,23 @@ def get_latest_url():
         st.error(f"Error retrieving URL from Firestore: {e}")
     return None, None
 
-# Streamlit app layout and logic
-st.markdown('<div class="title">Team Rocket HQ Pokémon Go Raid Tracker</div>', unsafe_allow_html=True)
-is_admin = st.sidebar.checkbox("Admin Mode")
+# Check query parameters for admin mode
+query_params = st.experimental_get_query_params()
+is_admin = query_params.get("admin", ["false"])[0].lower() == "true"
 
 if is_admin:
-    st.title("Admin Interface")
-    new_url = st.text_area("Paste the URL:")
-    if st.button("Post URL"):
+    st.sidebar.title("Admin Interface")
+    new_url = st.sidebar.text_area("Paste the URL:")
+    if st.sidebar.button("Post URL"):
         if new_url:
             save_url_to_firestore(new_url)
         else:
-            st.error("No URL entered.")
-else:
-    url, last_updated = get_latest_url()
-    if url:
-        st.markdown(f'<div class="link-container"><a href="{url}" target="_blank">{url}</a></div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="timestamp">Last Updated: {last_updated}</div>', unsafe_allow_html=True)
-    else:
-        st.info("No URLs found.")
+            st.sidebar.error("No URL entered.")
 
+# Main page content
+url, last_updated = get_latest_url()
+if url:
+    st.markdown(f'<div class="link-container"><a href="{url}" target="_blank">{url}</a></div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="timestamp">Last Updated: {last_updated}</div>', unsafe_allow_html=True)
+else:
+    st.info("No URLs found.")
