@@ -10,9 +10,11 @@ from urllib.parse import urlparse, parse_qs
 import streamlit.components.v1 as components
 import time
 from selenium import webdriver
-from selenium.webdriver.chrome.service import Service as ChromeService
+from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
-def get_final_url(short_url):
+
+import zipfile
+def get_final_url(short_url, driver_path):
     # Set up Selenium WebDriver
     options = webdriver.ChromeOptions()
     options.add_argument('--headless')  # Run in headless mode
@@ -20,11 +22,10 @@ def get_final_url(short_url):
     options.add_argument('--disable-dev-shm-usage')
     options.add_argument('--disable-gpu')  # Disable GPU hardware acceleration
     options.add_argument('--window-size=1920x1080')
+    options.binary_location = os.path.join(driver_path, "chrome-headless-shell")
 
-    # Set up the WebDriver service
-    service = ChromeService(ChromeDriverManager().install())
-
-    # Initialize WebDriver
+    # Initialize WebDriver with a specified path to the ChromeDriver
+    service = Service(executable_path=os.path.join(driver_path, "chromedriver"))  # Adjust this if necessary
     driver = webdriver.Chrome(service=service, options=options)
     
     try:
@@ -177,6 +178,13 @@ else:
 # Resolve the short URL to get the full Google Maps URL
 
 final_url = get_final_url(url)
+
+# Download Chrome and set up paths
+download_and_extract_chrome()
+chrome_driver_path = "./chrome"  # Update this path if necessary
+
+# Get the final URL after allowing it to load completely
+final_url = get_final_url(short_url, chrome_driver_path)
 
 # Extract coordinates from the final URL
 lat, lon = extract_coordinates(final_url)
