@@ -14,12 +14,46 @@ def resolve_short_url(short_url):
     response = requests.head(short_url, allow_redirects=True)
     return response.url
 
-def create_embed_url(api_key, full_url):
-    # Parse the resolved URL for embedding
-    # Live location links may not directly give lat/lon; embedding options can vary
-    # Consider using a full URL and API to handle the live aspect
-    embed_url = full_url.replace("maps.app.goo.gl", "www.google.com/maps")
-    return embed_url
+def simulate_zoom_in_url(full_url):
+    # Modify the URL to simulate a zoom-in effect
+    parsed_url = urlparse(full_url)
+    path = parsed_url.path
+    
+    # Check for '@' in the path, then insert zoom coordinates if not present
+    if '@' in path:
+        parts = path.split('@')
+        location_data = parts[1].split(',')
+        if len(location_data) >= 2:
+            # Simulate a deeper zoom by adding zoom-level parameters
+            location_data[2] = "15z"  # Set zoom level to 15
+            path = f"{parts[0]}@{','.join(location_data)}"
+    else:
+        # If '@' not found, append default coordinates with zoom
+        path += "@37.7749,-122.4194,15z"  # Example coordinates with zoom
+    
+    # Reconstruct the full URL with zoom modifications
+    full_zoomed_url = f"{parsed_url.scheme}://{parsed_url.netloc}{path}?{parsed_url.query}"
+    return full_zoomed_url
+
+def extract_coordinates(full_url):
+    # Extract coordinates from the modified URL
+    parsed_url = urlparse(full_url)
+    if '@' in parsed_url.path:
+        parts = parsed_url.path.split('@')
+        if len(parts) > 1:
+            location_data = parts[1].split(',')
+            if len(location_data) >= 2:
+                try:
+                    lat = float(location_data[0])
+                    lon = float(location_data[1])
+                    return lat, lon
+                except ValueError:
+                    pass
+    return None, None
+
+def create_embed_url(api_key, lat, lon, zoom=15):
+    # Construct the Google Maps embed URL with a specified zoom level
+    return f"https://www.google.com/maps/embed/v1/view?key={api_key}&center={lat},{lon}&zoom={zoom}"
 
 # Use Streamlit secrets for API key
 api_key = st.secrets["gmaps_api"]
@@ -134,16 +168,27 @@ if url:
 else:
     st.info("No URLs found.")
 
-# Example usage
+#
+# Resolve the short URL to get the full Google Maps URL
 full_url = resolve_short_url(url)
 
-# Generate the embed URL
-embed_url = create_embed_url(api_key, full_url)
+# Simulate zoom to modify URL
+full_zoomed_url = simulate_zoom_in_url(full_url)
 
-# Use the embed URL to construct the iframe
-map_iframe = f"""
-<iframe src="{embed_url}" width="600" height="450" frameborder="0" style="border:0;" allowfullscreen="" aria-hidden="false" tabindex="0"></iframe>
-"""
+# Extract coordinates from the modified URL
+lat, lon = extract_coordinates(full_zoomed_url)
 
-# Embed the map in the Streamlit app
-components.html(map_iframe, height=500)
+# Check if coordinates were successfully extracted
+if lat is not None and lon is not None:
+    # Generate the embed URL with a zoom level for a closer view
+    embed_url = create_embed_url(api_key, lat, lon, zoom=17)  # Increase zoom level for closer view
+
+    # Create the iframe with the generated embed URL
+    map_iframe = f"""
+    <iframe src="{embed_url}" width="600" height="450" frameborder="0" style="border:0;" allowfullscreen="" aria-hidden="false" tabindex="0"></iframe>
+    """
+
+    # Embed the map in the Streamlit app
+    components.html(map_iframe, height=500)
+else:
+    st.write("Unable to extract coordinates from the URL.")
