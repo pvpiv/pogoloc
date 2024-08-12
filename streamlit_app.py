@@ -15,7 +15,7 @@ def resolve_short_url(short_url):
     response = requests.head(short_url, allow_redirects=True)
     return response.url
 
-def wait_for_coordinates(url, delay=2):
+def wait_for_coordinates(url, delay=5):
     # Wait for a few seconds to allow the URL to update with coordinates
     time.sleep(delay)
     
