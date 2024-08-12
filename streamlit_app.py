@@ -115,3 +115,15 @@ if url:
     st.markdown(f'<div class="timestamp">Last Updated: {last_updated}</div>', unsafe_allow_html=True)
 else:
     st.info("No URLs found.")
+
+import streamlit as st
+import streamlit.components.v1 as components
+
+# Replace with your Google Maps embed URL
+map_iframe = """
+<iframe src="https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d3151.8354345093743!2d144.96305800000004!3d-37.814217999999996!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2sus!4v1602728774284!5m2!1sen!2sus" 
+width="600" height="450" frameborder="0" style="border:0;" allowfullscreen="" aria-hidden="false" tabindex="0"></iframe>
+"""
+
+# Embed the map in the Streamlit app
+components.html(map_iframe, height=500)
