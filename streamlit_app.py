@@ -15,6 +15,32 @@ from webdriver_manager.chrome import ChromeDriverManager
 
 import zipfile
 
+def download_and_extract_chrome():
+    url = "https://storage.googleapis.com/chrome-for-testing-public/127.0.6533.99/linux64/chrome-headless-shell-linux64.zip"
+    file_name = "chrome-headless-shell-linux64.zip"
+    extract_path = "./chrome"
+
+    # Create a directory for extracted files if it doesn't exist
+    os.makedirs(extract_path, exist_ok=True)
+
+    # Download the file
+    response = requests.get(url, stream=True)
+    if response.status_code == 200:
+        with open(file_name, 'wb') as file:
+            for chunk in response.iter_content(chunk_size=8192):
+                file.write(chunk)
+        print("Download complete.")
+
+        # Extract the zip file
+        with zipfile.ZipFile(file_name, 'r') as zip_ref:
+            zip_ref.extractall(extract_path)
+        print("Extraction complete.")
+
+        # Clean up zip file after extraction
+        os.remove(file_name)
+    else:
+        print(f"Failed to download file. Status code: {response.status_code}")
+
 def get_final_url(short_url, driver_path):
     # Set up Selenium WebDriver
     options = webdriver.ChromeOptions()
@@ -177,10 +203,9 @@ else:
 
 #
 # Resolve the short URL to get the full Google Maps URL
-
 # Download Chrome and set up paths
 download_and_extract_chrome()
-chrome_driver_path = "./chrome"  # Update this path if necessary
+chrome_driver_path = "./chrome"  # Ensure this path is correct
 
 # Get the final URL after allowing it to load completely
 final_url = get_final_url(url, chrome_driver_path)
