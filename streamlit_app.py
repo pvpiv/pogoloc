@@ -171,7 +171,7 @@ if is_admin:
 if st.session_state['latest_url']:
     st.markdown(f"""
         <div class="link-container">
-            <a href="{st.session_state['latest_url']}" target="_blank" class="link-button">Click Here to See Live Map</a>
+            <a href="{st.session_state['latest_url']}" target="{latest_url}" class="link-button">Click Here to See Live Map</a>
         </div>
         <div class="actual-link">{st.session_state['latest_url']}</div>
         <div class="timestamp">Last Updated: {st.session_state['last_updated']}</div>
