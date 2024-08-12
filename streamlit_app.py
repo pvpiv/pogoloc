@@ -14,6 +14,7 @@ from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 
 import zipfile
+
 def get_final_url(short_url, driver_path):
     # Set up Selenium WebDriver
     options = webdriver.ChromeOptions()
@@ -177,14 +178,12 @@ else:
 #
 # Resolve the short URL to get the full Google Maps URL
 
-final_url = get_final_url(url)
-
 # Download Chrome and set up paths
 download_and_extract_chrome()
 chrome_driver_path = "./chrome"  # Update this path if necessary
 
 # Get the final URL after allowing it to load completely
-final_url = get_final_url(short_url, chrome_driver_path)
+final_url = get_final_url(url, chrome_driver_path)
 
 # Extract coordinates from the final URL
 lat, lon = extract_coordinates(final_url)
