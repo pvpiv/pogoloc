@@ -120,8 +120,9 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 # Replace with your Google Maps embed URL
-map_iframe = '<iframe src="'+ url +' width="600" height="450" frameborder="0" style="border:0;" allowfullscreen="" aria-hidden="false" tabindex="0"></iframe>'
-
+map_iframe = f"""
+<iframe src="{url}" width="600" height="450" frameborder="0" style="border:0;" allowfullscreen="" aria-hidden="false" tabindex="0"></iframe>
+"""
 
 # Embed the map in the Streamlit app
 components.html(map_iframe, height=500)
