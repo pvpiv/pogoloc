@@ -1,9 +1,10 @@
 import streamlit as st
 from google.cloud import firestore
 from google.oauth2 import service_account
-import pytz
 from datetime import datetime
+import pytz
 import json
+import re
 
 # Load Firebase credentials and create Firestore client
 key_dict = json.loads(st.secrets["textkey"])
@@ -16,7 +17,6 @@ collection_name = "location"
 def get_latest_url():
     """Retrieve the latest URL from Firestore based on the highest document ID."""
     try:
-        # Query to find the highest numeric document ID
         docs = db.collection(collection_name).stream()
         max_doc = None
         max_id = 0
@@ -49,10 +49,67 @@ def save_url_to_firestore(url):
     except Exception as e:
         st.error(f"Error saving URL to Firestore: {e}")
 
-# Admin Interface
+def restore_special_characters(url):
+    """Restore special characters in the URL."""
+    return url.replace('!!!', '?').replace('[[[', '&')
+
+# Check query parameters for admin mode and auto link
 query_params = st.experimental_get_query_params()
 is_admin = query_params.get("admin", ["false"])[0].lower() == "true"
+auto_link = query_params.get("link", [None])[0]
 
+if auto_link:
+    # If the link parameter is provided, decode it and save it
+    decoded_link = restore_special_characters(auto_link)
+    save_url_to_firestore(decoded_link)
+    st.success(f"Auto-submitted URL: {decoded_link}")
+
+# Page title and background styling
+st.markdown(
+    """
+    <style>
+    body {
+        background-image: url('dynamax-battle.png');
+        background-size: cover;
+    }
+    .title {
+        color: #FFCB05;
+        font-size: 48px;
+        text-align: center;
+        text-shadow: 2px 2px #3B4CCA;
+    }
+    .timestamp {
+        color: #FFFFFF;
+        font-size: 18px;
+        text-align: left;
+        margin-top: 10px;
+        text-shadow: 1px 1px #3B4CCA;
+    }
+    .link-container {
+        color: #FFFFFF;
+        font-size: 24px;
+        text-align: left;
+        margin-top: 20px;
+    }
+    .btn {
+        color: #FFFFFF;
+        background-color: #007BFF;
+        border: none;
+        padding: 10px 20px;
+        text-decoration: none;
+        border-radius: 5px;
+        box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
+        display: inline-block;
+        font-size: 18px;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+st.markdown('<div class="title">Team Rocket HQ Pokémon Go Raid Tracker</div>', unsafe_allow_html=True)
+
+# Admin Interface
 if is_admin:
     st.sidebar.title("Admin Interface")
     new_url = st.sidebar.text_area("Paste the URL:")
@@ -65,7 +122,7 @@ if is_admin:
 # Display the latest URL
 url, last_updated = get_latest_url()
 if url:
-    st.markdown(f'<div class="link-container"><a href="{url}" target="_blank">{url}</a></div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="link-container"><a href="{url}" target="_blank" class="btn">{url}</a></div>', unsafe_allow_html=True)
     st.markdown(f'<div class="timestamp">Last Updated: {last_updated}</div>', unsafe_allow_html=True)
 else:
     st.info("No URLs found.")
