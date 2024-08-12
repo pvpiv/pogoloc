@@ -93,11 +93,12 @@ st.markdown(
         margin-bottom: 20px;
     }
     .actual-link {
-        color: #FFFFFF;
-        font-size: 16px;
+        color: #3B4CCA; /* Change to a contrasting color */
+        font-size: 18px;
         text-align: center;
         margin-top: 10px;
         word-wrap: break-word;
+        text-decoration: underline;
     }
     .link-button {
         display: inline-block;
@@ -171,9 +172,11 @@ if is_admin:
 if st.session_state['latest_url']:
     st.markdown(f"""
         <div class="link-container">
-            <a href="{st.session_state['latest_url']}" target="{latest_url}" class="link-button">Click Here to See Live Map</a>
+            <a href="{st.session_state['latest_url']}" target="_blank" class="link-button">Click Here to See Live Map</a>
         </div>
-        <div class="actual-link">{st.session_state['latest_url']}</div>
+        <div class="actual-link">
+            <a href="{st.session_state['latest_url']}" target="_blank">{st.session_state['latest_url']}</a>
+        </div>
         <div class="timestamp">Last Updated: {st.session_state['last_updated']}</div>
     """, unsafe_allow_html=True)
 else:
