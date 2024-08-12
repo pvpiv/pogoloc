@@ -81,7 +81,7 @@ st.markdown(
     .timestamp {
         color: #FFFFFF;
         font-size: 18px;
-        text-align: left;
+        text-align: center;
         margin-top: 10px;
         text-shadow: 1px 1px #3B4CCA;
     }
@@ -91,6 +91,13 @@ st.markdown(
         text-align: center;
         margin-top: 20px;
         margin-bottom: 20px;
+    }
+    .actual-link {
+        color: #FFFFFF;
+        font-size: 16px;
+        text-align: center;
+        margin-top: 10px;
+        word-wrap: break-word;
     }
     .link-button {
         display: inline-block;
@@ -114,6 +121,42 @@ st.markdown(
 
 st.markdown('<div class="title">Team Rocket HQ Pokémon Go Raid Tracker</div>', unsafe_allow_html=True)
 
+# Initialize session state for storing the latest URL and notification state
+if 'latest_url' not in st.session_state:
+    st.session_state['latest_url'] = None
+    st.session_state['initial_load'] = True  # Flag to indicate the initial load
+
+# Function to update the displayed URL if it changes
+def update_displayed_url():
+    # Retrieve the latest URL from Firestore
+    url, last_updated = get_latest_url()
+    if url and url != st.session_state['latest_url']:
+        st.session_state['latest_url'] = url
+        st.session_state['last_updated'] = last_updated
+        # Notify if it's not the initial load
+        if not st.session_state['initial_load']:
+            st.session_state['notification'] = True
+        st.session_state['initial_load'] = False
+
+# Function to play a sound using JavaScript
+def play_sound():
+    sound_html = """
+    <audio autoplay>
+        <source src="https://www.soundjay.com/button/beep-01a.mp3" type="audio/mpeg">
+        Your browser does not support the audio element.
+    </audio>
+    """
+    st.markdown(sound_html, unsafe_allow_html=True)
+
+# Update the URL and check for changes
+update_displayed_url()
+
+# Display notification if the URL changed after initial load
+if 'notification' in st.session_state and st.session_state['notification']:
+    st.info("The link has changed. Please check the new link below.")
+    play_sound()
+    st.session_state['notification'] = False
+
 # Admin Interface
 if is_admin:
     st.sidebar.title("Admin Interface")
@@ -125,13 +168,13 @@ if is_admin:
             st.sidebar.error("No URL entered.")
 
 # Display the latest URL
-url, last_updated = get_latest_url()
-if url:
+if st.session_state['latest_url']:
     st.markdown(f"""
         <div class="link-container">
-            <a href="{url}" target="_blank" class="link-button">Click Here to See Live Map</a>
+            <a href="{st.session_state['latest_url']}" target="_blank" class="link-button">Click Here to See Live Map</a>
         </div>
-        <div class="timestamp">Last Updated: {last_updated}</div>
+        <div class="actual-link">{st.session_state['latest_url']}</div>
+        <div class="timestamp">Last Updated: {st.session_state['last_updated']}</div>
     """, unsafe_allow_html=True)
 else:
     st.info("No URLs found.")
