@@ -1,7 +1,6 @@
 import streamlit as st
 from google.cloud import firestore
 from google.oauth2 import service_account
-from datetime import datetime
 import pytz
 import json
 import re
@@ -26,8 +25,10 @@ def save_url_to_firestore(url):
             "timestamp": firestore.SERVER_TIMESTAMP
         })
         st.success(f"URL saved to Firestore: {url}")
+        print(f"URL saved to Firestore: {url}")  # Debug print
     except Exception as e:
         st.error(f"Error saving URL to Firestore: {e}")
+        print(f"Error saving URL to Firestore: {e}")  # Debug print
 
 def get_latest_data():
     """Retrieve the latest URL and timestamp from Firestore."""
@@ -36,9 +37,13 @@ def get_latest_data():
         doc = doc_ref.get()
         if doc.exists:
             data = doc.to_dict()
+            print(f"Retrieved data from Firestore: {data}")  # Debug print
             return data.get("url", ""), data.get("timestamp")
+        else:
+            print("Document does not exist.")  # Debug print
     except Exception as e:
         st.error(f"Error retrieving URL from Firestore: {e}")
+        print(f"Error retrieving URL from Firestore: {e}")  # Debug print
     return "", None
 
 def extract_url(text):
@@ -61,6 +66,7 @@ if auto_link and is_admin:
     decoded_link = restore_special_characters(auto_link)
     save_url_to_firestore(decoded_link)
     st.success(f"Auto-submitted URL: {decoded_link}")
+    print(f"Auto-submitted URL: {decoded_link}")  # Debug print
 
 # Page title and background styling
 st.markdown(
