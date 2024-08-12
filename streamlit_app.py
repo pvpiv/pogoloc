@@ -14,14 +14,17 @@ from selenium.webdriver.chrome.service import Service as ChromeService
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.by import By
 
-
 def get_final_url(short_url):
     # Set up Selenium WebDriver
     options = webdriver.ChromeOptions()
     options.add_argument('--headless')  # Run in headless mode
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
+    options.add_argument('--disable-gpu')  # Disable GPU hardware acceleration
+    options.add_argument('--disable-software-rasterizer')
+    options.add_argument('--window-size=1920x1080')
 
+    # Attempt to start the WebDriver service
     driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()), options=options)
     
     try:
