@@ -80,7 +80,7 @@ st.markdown(
     .timestamp {
         color: #FFFFFF;
         font-size: 18px;
-        text-align: left;
+        text-align: center;
         margin-top: 10px;
         text-shadow: 1px 1px #3B4CCA;
     }
@@ -92,16 +92,25 @@ st.markdown(
     }
     .link-button {
         display: inline-block;
-        background-color: #3B4CCA;
-        color: #FFFFFF;
+        background-color: #FFCB05; /* Yellow color */
+        color: #3B4CCA; /* Dark blue text */
         padding: 10px 20px;
         font-size: 24px;
         border-radius: 5px;
         text-decoration: none;
         box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+        transition: background-color 0.3s, color 0.3s;
     }
     .link-button:hover {
-        background-color: #2B3CA0;
+        background-color: #FFD700; /* Lighter yellow */
+        color: #2B3CA0; /* Slightly darker blue */
+    }
+    .actual-link {
+        color: #3B4CCA;
+        font-size: 18px;
+        margin-top: 10px;
+        text-align: center;
+        word-wrap: break-word;
     }
     </style>
     """,
@@ -127,6 +136,7 @@ if url:
         <div class="link-container">
             <a href="{url}" target="_blank" class="link-button">Click Here to See Live Map</a>
         </div>
+        <div class="actual-link">{url}</div>
         <div class="timestamp">Last Updated: {last_updated}</div>
     """, unsafe_allow_html=True)
 else:
