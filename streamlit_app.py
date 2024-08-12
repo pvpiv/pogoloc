@@ -31,13 +31,22 @@ def download_and_extract_chrome():
                 file.write(chunk)
         print("Download complete.")
 
-        # Extract the zip file
-        with zipfile.ZipFile(file_name, 'r') as zip_ref:
-            zip_ref.extractall(extract_path)
-        print("Extraction complete.")
+        # Verify file size
+        file_size = os.path.getsize(file_name)
+        print(f"Downloaded file size: {file_size} bytes")
 
-        # Clean up zip file after extraction
-        os.remove(file_name)
+        # Extract the zip file
+        try:
+            with zipfile.ZipFile(file_name, 'r') as zip_ref:
+                zip_ref.extractall(extract_path)
+            print("Extraction complete.")
+        except zipfile.BadZipFile:
+            print("Error: Bad ZIP file.")
+        except EOFError:
+            print("Error: Incomplete ZIP file.")
+        finally:
+            # Clean up zip file after extraction
+            os.remove(file_name)
     else:
         print(f"Failed to download file. Status code: {response.status_code}")
 
