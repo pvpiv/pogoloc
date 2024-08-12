@@ -9,23 +9,36 @@ import requests
 from urllib.parse import urlparse, parse_qs
 import streamlit.components.v1 as components
 import time
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service as ChromeService
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.common.by import By
 
-def resolve_short_url(short_url):
-    # Resolve the short URL to the full Google Maps URL
-    response = requests.head(short_url, allow_redirects=True)
-    return response.url
 
-def wait_for_coordinates(url, delay=5):
-    # Wait for a few seconds to allow the URL to update with coordinates
-    time.sleep(delay)
+def get_final_url(short_url):
+    # Set up Selenium WebDriver
+    options = webdriver.ChromeOptions()
+    options.add_argument('--headless')  # Run in headless mode
+    options.add_argument('--no-sandbox')
+    options.add_argument('--disable-dev-shm-usage')
+
+    driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()), options=options)
     
-    # Re-resolve the URL if necessary
-    response = requests.head(url, allow_redirects=True)
-    updated_url = response.url
-    return updated_url
+    try:
+        # Open the short URL
+        driver.get(short_url)
+        
+        # Wait for the URL to change (adjust the sleep time if necessary)
+        time.sleep(5)  # Wait for the final URL to load completely
+
+        # Get the current URL
+        final_url = driver.current_url
+        return final_url
+    finally:
+        driver.quit()
 
 def extract_coordinates(full_url):
-    # Extract coordinates from the URL after it has updated
+    # Extract coordinates from the final URL
     parsed_url = urlparse(full_url)
     if '@' in parsed_url.path:
         parts = parsed_url.path.split('@')
@@ -160,13 +173,10 @@ else:
 #
 # Resolve the short URL to get the full Google Maps URL
 
-initial_url = resolve_short_url(url)
+final_url = get_final_url(url)
 
-# Wait for the URL to update with coordinates
-updated_url = wait_for_coordinates(initial_url, delay=2)
-
-# Extract coordinates from the updated URL
-lat, lon = extract_coordinates(updated_url)
+# Extract coordinates from the final URL
+lat, lon = extract_coordinates(final_url)
 
 # Check if coordinates were successfully extracted
 if lat is not None and lon is not None:
