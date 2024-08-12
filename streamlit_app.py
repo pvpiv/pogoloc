@@ -5,6 +5,31 @@ from datetime import datetime
 import pytz
 import json
 import re
+import requests
+from urllib.parse import urlparse, parse_qs
+
+def resolve_short_url(short_url):
+    # Resolve the short URL to the full Google Maps URL
+    response = requests.head(short_url, allow_redirects=True)
+    return response.url
+
+def create_embed_url(full_url):
+    # Extract the coordinates or place information from the full URL
+    parsed_url = urlparse(full_url)
+    query_params = parse_qs(parsed_url.query)
+
+    # Extract latitude and longitude if available
+    if 'll' in query_params:
+        lat_lon = query_params['ll'][0]
+        lat, lon = lat_lon.split(',')
+    else:
+        # Default location if no lat/lon found (e.g., center of map)
+        lat, lon = '37.7749', '-122.4194'  # Example: San Francisco
+
+    # Create the Google Maps embed URL
+    embed_url = f"https://www.google.com/maps/embed/v1/view?key=YOUR_API_KEY&center={lat},{lon}&zoom=12"
+    return embed_url
+
 
 # Load Firebase credentials and create Firestore client
 key_dict = json.loads(st.secrets["textkey"])
@@ -116,12 +141,16 @@ if url:
 else:
     st.info("No URLs found.")
 
-import streamlit as st
-import streamlit.components.v1 as components
+# Example usage
+full_url = resolve_short_url(url)
+embed_url = create_embed_url(full_url)
+
+# Print or use the embed URL
+print(embed_url)
 
 # Replace with your Google Maps embed URL
 map_iframe = f"""
-<iframe src="{url}" width="600" height="450" frameborder="0" style="border:0;" allowfullscreen="" aria-hidden="false" tabindex="0"></iframe>
+<iframe src="{embed_url}" width="600" height="450" frameborder="0" style="border:0;" allowfullscreen="" aria-hidden="false" tabindex="0"></iframe>
 """
 
 # Embed the map in the Streamlit app
