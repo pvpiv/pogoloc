@@ -1,10 +1,9 @@
 import streamlit as st
 from google.cloud import firestore
 from google.oauth2 import service_account
-from datetime import datetime
 import pytz
+from datetime import datetime
 import json
-import re
 
 # Load Firebase credentials and create Firestore client
 key_dict = json.loads(st.secrets["textkey"])
@@ -28,7 +27,7 @@ def get_latest_url():
                 max_doc = doc
         if max_doc:
             data = max_doc.to_dict()
-            timestamp = data['Timestamp'].to_datetime()
+            timestamp = data['Timestamp']
             est = pytz.timezone('US/Eastern')
             formatted_time = timestamp.astimezone(est).strftime("%Y-%m-%d %I:%M:%S %p %Z")
             return data['URL'], formatted_time
