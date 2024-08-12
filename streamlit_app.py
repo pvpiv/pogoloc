@@ -3,7 +3,6 @@ from google.cloud import firestore
 from google.oauth2 import service_account
 import pytz
 import json
-import time
 
 # Load Firebase credentials and create Firestore client
 key_dict = json.loads(st.secrets["textkey"])
@@ -134,7 +133,8 @@ if is_admin:
 # Initialize session state for storing the latest URL and notification state
 if 'latest_url' not in st.session_state:
     st.session_state['latest_url'] = None
-    st.session_state['notification'] = False
+    st.session_state['last_updated'] = None
+    st.session_state['initial_load'] = True  # Flag to indicate the initial load
 
 # Function to update the displayed URL if it changes
 def update_displayed_url():
@@ -143,7 +143,10 @@ def update_displayed_url():
     if url and url != st.session_state['latest_url']:
         st.session_state['latest_url'] = url
         st.session_state['last_updated'] = last_updated
-        st.session_state['notification'] = True
+        # Notify if it's not the initial load
+        if not st.session_state['initial_load']:
+            st.session_state['notification'] = True
+        st.session_state['initial_load'] = False
 
 # Function to play a sound using JavaScript
 def play_sound():
@@ -158,8 +161,8 @@ def play_sound():
 # Update the URL and check for changes
 update_displayed_url()
 
-# Display notification if the URL changed
-if st.session_state['notification']:
+# Display notification if the URL changed after initial load
+if 'notification' in st.session_state and st.session_state['notification']:
     st.info("The link has changed. Please check the new link below.")
     play_sound()
     st.session_state['notification'] = False
