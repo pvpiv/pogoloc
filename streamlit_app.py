@@ -14,7 +14,7 @@ def resolve_short_url(short_url):
     response = requests.head(short_url, allow_redirects=True)
     return response.url
 
-def create_embed_url(full_url):
+def create_embed_url(full_url, api_key):
     # Extract the coordinates or place information from the full URL
     parsed_url = urlparse(full_url)
     query_params = parse_qs(parsed_url.query)
@@ -28,9 +28,11 @@ def create_embed_url(full_url):
         lat, lon = '37.7749', '-122.4194'  # Example: San Francisco
 
     # Create the Google Maps embed URL
-    embed_url = f"https://www.google.com/maps/embed/v1/view?key=YOUR_API_KEY&center={lat},{lon}&zoom=12"
+    embed_url = f"https://www.google.com/maps/embed/v1/view?key={api_key}&center={lat},{lon}&zoom=12"
     return embed_url
 
+# Your API key
+api_key = st.secrets["gmaps_api"]
 
 # Load Firebase credentials and create Firestore client
 key_dict = json.loads(st.secrets["textkey"])
@@ -144,10 +146,7 @@ else:
 
 # Example usage
 full_url = resolve_short_url(url)
-embed_url = create_embed_url(full_url)
-
-# Print or use the embed URL
-print(embed_url)
+embed_url = create_embed_url(full_url, api_key)
 
 # Replace with your Google Maps embed URL
 map_iframe = f"""
