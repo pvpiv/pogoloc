@@ -15,7 +15,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 import os
 import zipfile
 
-def download_and_extract_chrome():
+def download_and_extract_chrome(retries=3, timeout=30):
     url = "https://storage.googleapis.com/chrome-for-testing-public/127.0.6533.99/linux64/chrome-headless-shell-linux64.zip"
     file_name = "chrome-headless-shell-linux64.zip"
     extract_path = "./chrome"
@@ -23,32 +23,46 @@ def download_and_extract_chrome():
     # Create a directory for extracted files if it doesn't exist
     os.makedirs(extract_path, exist_ok=True)
 
-    # Download the file
-    response = requests.get(url, stream=True)
-    if response.status_code == 200:
-        with open(file_name, 'wb') as file:
-            for chunk in response.iter_content(chunk_size=8192):
-                file.write(chunk)
-        print("Download complete.")
-
-        # Verify file size
-        file_size = os.path.getsize(file_name)
-        print(f"Downloaded file size: {file_size} bytes")
-
-        # Extract the zip file
+    for attempt in range(retries):
         try:
-            with zipfile.ZipFile(file_name, 'r') as zip_ref:
-                zip_ref.extractall(extract_path)
-            print("Extraction complete.")
+            # Download the file
+            response = requests.get(url, stream=True, timeout=timeout)
+            if response.status_code == 200:
+                with open(file_name, 'wb') as file:
+                    for chunk in response.iter_content(chunk_size=8192):
+                        file.write(chunk)
+                print("Download complete.")
+
+                # Verify file exists and size
+                if os.path.exists(file_name):
+                    file_size = os.path.getsize(file_name)
+                    print(f"Downloaded file size: {file_size} bytes")
+
+                    # Extract the zip file
+                    with zipfile.ZipFile(file_name, 'r') as zip_ref:
+                        zip_ref.extractall(extract_path)
+                    print("Extraction complete.")
+                else:
+                    print("Error: File was not downloaded successfully.")
+
+                # Clean up zip file after extraction
+                os.remove(file_name)
+                break  # Exit the loop if download and extraction succeed
+            else:
+                print(f"Failed to download file. Status code: {response.status_code}")
+
+        except requests.RequestException as e:
+            print(f"Download failed on attempt {attempt + 1}/{retries}. Error: {e}")
+            if attempt == retries - 1:
+                raise  # Re-raise the exception if the final attempt fails
+
         except zipfile.BadZipFile:
             print("Error: Bad ZIP file.")
+            break
+
         except EOFError:
             print("Error: Incomplete ZIP file.")
-        finally:
-            # Clean up zip file after extraction
-            os.remove(file_name)
-    else:
-        print(f"Failed to download file. Status code: {response.status_code}")
+            break
 
 def get_final_url(short_url, driver_path):
     # Set up Selenium WebDriver
