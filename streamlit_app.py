@@ -8,35 +8,24 @@ import re
 import requests
 from urllib.parse import urlparse, parse_qs
 import streamlit.components.v1 as components
+import time
 
 def resolve_short_url(short_url):
     # Resolve the short URL to the full Google Maps URL
     response = requests.head(short_url, allow_redirects=True)
     return response.url
 
-def simulate_zoom_in_url(full_url):
-    # Modify the URL to simulate a zoom-in effect
-    parsed_url = urlparse(full_url)
-    path = parsed_url.path
+def wait_for_coordinates(url, delay=2):
+    # Wait for a few seconds to allow the URL to update with coordinates
+    time.sleep(delay)
     
-    # Check for '@' in the path, then insert zoom coordinates if not present
-    if '@' in path:
-        parts = path.split('@')
-        location_data = parts[1].split(',')
-        if len(location_data) >= 2:
-            # Simulate a deeper zoom by adding zoom-level parameters
-            location_data[2] = "15z"  # Set zoom level to 15
-            path = f"{parts[0]}@{','.join(location_data)}"
-    else:
-        # If '@' not found, append default coordinates with zoom
-        path += "@37.7749,-122.4194,15z"  # Example coordinates with zoom
-    
-    # Reconstruct the full URL with zoom modifications
-    full_zoomed_url = f"{parsed_url.scheme}://{parsed_url.netloc}{path}?{parsed_url.query}"
-    return full_zoomed_url
+    # Re-resolve the URL if necessary
+    response = requests.head(url, allow_redirects=True)
+    updated_url = response.url
+    return updated_url
 
 def extract_coordinates(full_url):
-    # Extract coordinates from the modified URL
+    # Extract coordinates from the URL after it has updated
     parsed_url = urlparse(full_url)
     if '@' in parsed_url.path:
         parts = parsed_url.path.split('@')
@@ -170,13 +159,14 @@ else:
 
 #
 # Resolve the short URL to get the full Google Maps URL
-full_url = resolve_short_url(url)
 
-# Simulate zoom to modify URL
-full_zoomed_url = simulate_zoom_in_url(full_url)
+initial_url = resolve_short_url(url)
 
-# Extract coordinates from the modified URL
-lat, lon = extract_coordinates(full_zoomed_url)
+# Wait for the URL to update with coordinates
+updated_url = wait_for_coordinates(initial_url, delay=2)
+
+# Extract coordinates from the updated URL
+lat, lon = extract_coordinates(updated_url)
 
 # Check if coordinates were successfully extracted
 if lat is not None and lon is not None:
