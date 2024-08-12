@@ -14,6 +14,20 @@ db = firestore.Client(credentials=creds, project="pvpogo")
 # Firestore collection name
 collection_name = "location"
 
+def save_url_to_firestore(url):
+    """Save the URL with a timestamp to Firestore."""
+    try:
+        docs = db.collection(collection_name).stream()
+        max_id = max((int(doc.id) for doc in docs), default=0)
+        new_id = str(max_id + 1)
+        db.collection(collection_name).document(new_id).set({
+            'URL': url,
+            'Timestamp': firestore.SERVER_TIMESTAMP
+        })
+        st.success(f"URL saved to Firestore with ID {new_id}: {url}")
+    except Exception as e:
+        st.error(f"Error saving URL to Firestore: {e}")
+
 def get_latest_url():
     """Retrieve the latest URL from Firestore based on the highest document ID."""
     try:
@@ -35,25 +49,11 @@ def get_latest_url():
         st.error(f"Error retrieving URL from Firestore: {e}")
     return None, None
 
-def save_url_to_firestore(url):
-    """Save the URL into Firestore with an incremented document ID."""
-    try:
-        docs = db.collection(collection_name).stream()
-        max_id = max((int(doc.id) for doc in docs), default=0)
-        new_id = str(max_id + 1)
-        db.collection(collection_name).document(new_id).set({
-            'URL': url,
-            'Timestamp': firestore.SERVER_TIMESTAMP
-        })
-        st.success(f"URL saved to Firestore with ID {new_id}: {url}")
-    except Exception as e:
-        st.error(f"Error saving URL to Firestore: {e}")
-
 def restore_special_characters(url):
     """Restore special characters in the URL."""
     return url.replace('!!!', '?').replace('[[[', '&')
 
-# Check query parameters for admin mode and auto link
+# Check query parameters
 query_params = st.experimental_get_query_params()
 is_admin = query_params.get("admin", ["false"])[0].lower() == "true"
 auto_link = query_params.get("link", [None])[0]
@@ -91,17 +91,6 @@ st.markdown(
         text-align: left;
         margin-top: 20px;
     }
-    .btn {
-        color: #FFFFFF;
-        background-color: #007BFF;
-        border: none;
-        padding: 10px 20px;
-        text-decoration: none;
-        border-radius: 5px;
-        box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
-        display: inline-block;
-        font-size: 18px;
-    }
     </style>
     """,
     unsafe_allow_html=True
@@ -122,7 +111,7 @@ if is_admin:
 # Display the latest URL
 url, last_updated = get_latest_url()
 if url:
-    st.markdown(f'<div class="link-container"><a href="{url}" target="_blank" class="btn">{url}</a></div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="link-container"><a href="{url}" target="_blank">{url}</a></div>', unsafe_allow_html=True)
     st.markdown(f'<div class="timestamp">Last Updated: {last_updated}</div>', unsafe_allow_html=True)
 else:
     st.info("No URLs found.")
