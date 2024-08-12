@@ -1,14 +1,8 @@
 import streamlit as st
 from google.cloud import firestore
 from google.oauth2 import service_account
-from datetime import datetime
 import pytz
 import json
-import re
-import requests
-from urllib.parse import urlparse, parse_qs
-import streamlit.components.v1 as components
-
 
 # Load Firebase credentials and create Firestore client
 key_dict = json.loads(st.secrets["textkey"])
@@ -81,6 +75,7 @@ st.markdown(
         font-size: 48px;
         text-align: center;
         text-shadow: 2px 2px #3B4CCA;
+        margin-bottom: 30px;
     }
     .timestamp {
         color: #FFFFFF;
@@ -92,8 +87,21 @@ st.markdown(
     .link-container {
         color: #FFFFFF;
         font-size: 24px;
-        text-align: left;
+        text-align: center;
         margin-top: 20px;
+    }
+    .link-button {
+        display: inline-block;
+        background-color: #3B4CCA;
+        color: #FFFFFF;
+        padding: 10px 20px;
+        font-size: 24px;
+        border-radius: 5px;
+        text-decoration: none;
+        box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+    }
+    .link-button:hover {
+        background-color: #2B3CA0;
     }
     </style>
     """,
@@ -115,8 +123,11 @@ if is_admin:
 # Display the latest URL
 url, last_updated = get_latest_url()
 if url:
-    st.markdown(f'<div class="link-container"><a href="{url}" target="_blank">{url}</a></div>', unsafe_allow_html=True)
-    st.markdown(f'<div class="timestamp">Last Updated: {last_updated}</div>', unsafe_allow_html=True)
+    st.markdown(f"""
+        <div class="link-container">
+            <a href="{url}" target="_blank" class="link-button">Click Here to See Live Map</a>
+        </div>
+        <div class="timestamp">Last Updated: {last_updated}</div>
+    """, unsafe_allow_html=True)
 else:
     st.info("No URLs found.")
-
