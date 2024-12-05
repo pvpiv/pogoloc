@@ -1,1 +1,1 @@
-Live Location through Waze Link for Hundson County Pokemon Go Events
+Live Location through Google Maps Link for Hudson County Pokemon Go Events
